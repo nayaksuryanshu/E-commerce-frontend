@@ -24,7 +24,7 @@ export const authService = {
   },
 
   async getProfile() {
-    const response = await api.get('/auth/profile')
+    const response = await api.get('/auth/me')
     return response.data
   },
 
@@ -44,7 +44,7 @@ export const authService = {
   },
 
   async refreshToken() {
-    const response = await api.post('/auth/refresh')
+    const response = await api.post('/auth/refresh-token')
     if (response.data.token) {
       Cookies.set('token', response.data.token, { expires: 7 })
     }
