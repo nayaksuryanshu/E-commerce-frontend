@@ -19,14 +19,21 @@ const Register = () => {
   } = useForm()
 
   const password = watch('password')
+  const role = watch('role')
 
   const onSubmit = async (data) => {
     try {
-      await registerUser(data)
-      toast.success('Registration successful!')
-      navigate('/')
+      // Remove confirmPassword and agreeToTerms before sending to backend
+      const { confirmPassword: _, agreeToTerms: __, ...registrationData } = data;
+      
+      console.log('Sending registration data:', registrationData);
+      await registerUser(registrationData);
+      toast.success('Registration successful!');
+      navigate('/');
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Registration failed')
+      console.error('Registration error:', error);
+      console.error('Error response:', error.response?.data);
+      toast.error(error.response?.data?.message || 'Registration failed');
     }
   }
 
@@ -58,6 +65,10 @@ return (
                                 minLength: {
                                     value: 2,
                                     message: 'First name must be at least 2 characters'
+                                },
+                                maxLength: {
+                                    value: 50,
+                                    message: 'First name must be less than 50 characters'
                                 }
                             })}
                             type="text"
@@ -80,6 +91,10 @@ return (
                                 minLength: {
                                     value: 2,
                                     message: 'Last name must be at least 2 characters'
+                                },
+                                maxLength: {
+                                    value: 50,
+                                    message: 'Last name must be less than 50 characters'
                                 }
                             })}
                             type="text"
@@ -121,15 +136,15 @@ return (
                     <input
                         id="phone"
                         {...register('phone', {
-                            required: 'Phone number is required',
                             pattern: {
-                                value: /^\+?[\d\s\-()]+$/,
-                                message: 'Invalid phone number'
+                                value: /^\d{10}$/,
+                                message: 'Phone number must be exactly 10 digits'
                             }
                         })}
                         type="tel"
                         className="input mt-1"
-                        placeholder="Enter your phone number"
+                        placeholder="Enter 10-digit phone number"
+                        maxLength="10"
                     />
                     {errors.phone && (
                         <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>
@@ -154,6 +169,63 @@ return (
                     )}
                 </div>
 
+                {/* Vendor-specific fields */}
+                {role === 'vendor' && (
+                    <>
+                        <div>
+                            <label htmlFor="businessName" className="block text-sm font-medium text-gray-700">
+                                Business Name
+                            </label>
+                            <input
+                                id="businessName"
+                                {...register('businessName', {
+                                    required: role === 'vendor' ? 'Business name is required for vendors' : false,
+                                    minLength: {
+                                        value: 3,
+                                        message: 'Business name must be at least 3 characters'
+                                    },
+                                    maxLength: {
+                                        value: 100,
+                                        message: 'Business name must be less than 100 characters'
+                                    }
+                                })}
+                                type="text"
+                                className="input mt-1"
+                                placeholder="Enter your business name"
+                            />
+                            {errors.businessName && (
+                                <p className="mt-1 text-sm text-red-600">{errors.businessName.message}</p>
+                            )}
+                        </div>
+
+                        <div>
+                            <label htmlFor="businessDescription" className="block text-sm font-medium text-gray-700">
+                                Business Description
+                            </label>
+                            <textarea
+                                id="businessDescription"
+                                {...register('businessDescription', {
+                                    required: role === 'vendor' ? 'Business description is required for vendors' : false,
+                                    minLength: {
+                                        value: 10,
+                                        message: 'Business description must be at least 10 characters'
+                                    },
+                                    maxLength: {
+                                        value: 1000,
+                                        message: 'Business description must be less than 1000 characters'
+                                    }
+                                })}
+                                rows="3"
+                                className="input mt-1"
+                                placeholder="Describe your business..."
+                            />
+                            {errors.businessDescription && (
+                                <p className="mt-1 text-sm text-red-600">{errors.businessDescription.message}</p>
+                            )}
+                        </div>
+                    </>
+                )}
+
                 <div>
                     <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                         Password
@@ -164,8 +236,8 @@ return (
                             {...register('password', {
                                 required: 'Password is required',
                                 minLength: {
-                                    value: 8,
-                                    message: 'Password must be at least 8 characters'
+                                    value: 6,
+                                    message: 'Password must be at least 6 characters'
                                 },
                                 pattern: {
                                     value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,

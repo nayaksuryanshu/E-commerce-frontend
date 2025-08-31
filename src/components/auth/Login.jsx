@@ -21,11 +21,32 @@ const Login = () => {
 
   const onSubmit = async (data) => {
     try {
-      await login(data)
-      toast.success('Login successful!')
-      navigate(from, { replace: true })
+      console.log('Attempting login with:', { email: data.email, passwordLength: data.password?.length });
+      
+      const result = await login(data);
+      console.log('Login successful, result:', result);
+      
+      toast.success('Login successful!');
+      
+      // Add a small delay to ensure state updates
+      setTimeout(() => {
+        navigate(from, { replace: true });
+      }, 100);
+      
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Login failed')
+      console.error('Login error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        statusText: error.response?.statusText
+      });
+      
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error ||
+                          error.message ||
+                          'Login failed';
+      
+      toast.error(errorMessage);
     }
   }
 
@@ -50,6 +71,7 @@ const Login = () => {
               Email address
             </label>
             <input
+              id="email"
               {...register('email', {
                 required: 'Email is required',
                 pattern: {
@@ -73,6 +95,7 @@ const Login = () => {
             </label>
             <div className="relative mt-1">
               <input
+                id="password"
                 {...register('password', {
                   required: 'Password is required',
                   minLength: {
@@ -105,6 +128,7 @@ const Login = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center">
               <input
+                id="rememberMe"
                 {...register('rememberMe')}
                 type="checkbox"
                 className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
@@ -127,6 +151,13 @@ const Login = () => {
             {isLoading ? 'Signing in...' : 'Sign in'}
           </button>
         </form>
+        
+        {/* Debug section - remove in production */}
+        <div className="mt-4 p-4 bg-gray-100 rounded text-xs">
+          <p><strong>Debug Info:</strong></p>
+          <p>Redirect to: {from}</p>
+          <p>Auth loading: {isLoading.toString()}</p>
+        </div>
       </div>
     </div>
   )

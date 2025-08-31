@@ -2,6 +2,7 @@ import { createContext, useReducer, useEffect, useContext } from 'react'
 import { cartService } from '../services/cart'
 import { AuthContext } from './AuthContext'
 import toast from 'react-hot-toast'
+import Cookies from 'js-cookie'
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const CartContext = createContext()
@@ -13,7 +14,13 @@ const cartReducer = (state, action) => {
                 ...state,
                 items: action.payload.items || [],
                 total: action.payload.total || 0,
-                itemCount: action.payload.itemCount || 0
+                itemCount: action.payload.itemCount || 0,
+                isLoading: false
+            }
+        case 'SET_LOADING':
+            return {
+                ...state,
+                isLoading: action.payload
             }
         case 'ADD_ITEM':
             return {
@@ -41,7 +48,8 @@ const cartReducer = (state, action) => {
                 ...state,
                 items: [],
                 total: 0,
-                itemCount: 0
+                itemCount: 0,
+                isLoading: false
             }
         default:
             return state
@@ -57,7 +65,7 @@ const initialState = {
 
 export const CartProvider = ({ children }) => {
     const [state, dispatch] = useReducer(cartReducer, initialState)
-    const { isAuthenticated } = useContext(AuthContext)
+    const { isAuthenticated, logout } = useContext(AuthContext)
 
     // Load cart when user is authenticated
     useEffect(() => {
@@ -70,10 +78,39 @@ export const CartProvider = ({ children }) => {
 
     const loadCart = async () => {
         try {
+            dispatch({ type: 'SET_LOADING', payload: true })
             const response = await cartService.getCart()
             dispatch({ type: 'SET_CART', payload: response.data })
         } catch (error) {
             console.error('Error loading cart:', error)
+            
+            // Handle specific 403 "User is not active" error
+            if (error.response?.status === 403) {
+                const errorMessage = error.response?.data?.message
+                
+                if (errorMessage === 'User is not active') {
+                    toast.error('Your account is not active. Please verify your email or contact support.')
+                    
+                    // Clear the auth token since user is inactive
+                    Cookies.remove('token')
+                    
+                    // Trigger logout to clear auth state
+                    if (logout) {
+                        logout()
+                    }
+                    
+                    // Redirect to login page
+                    setTimeout(() => {
+                        window.location.href = '/login'
+                    }, 2000)
+                } else {
+                    toast.error('Access denied. Please check your permissions.')
+                }
+            } else {
+                toast.error('Failed to load cart')
+            }
+            
+            dispatch({ type: 'SET_LOADING', payload: false })
         }
     }
 
@@ -83,6 +120,11 @@ export const CartProvider = ({ children }) => {
             await loadCart()
             toast.success('Product added to cart')
         } catch (error) {
+            if (error.response?.status === 403 && 
+                error.response?.data?.message === 'User is not active') {
+                toast.error('Account not active. Cannot add items to cart.')
+                return
+            }
             toast.error(error.response?.data?.message || 'Failed to add to cart')
         }
     }
@@ -90,7 +132,12 @@ export const CartProvider = ({ children }) => {
     const updateCartItem = async (productId, quantity) => {
         try {
             await cartService.updateCartItem({ productId, quantity })
-        } catch {
+        } catch (error) {
+            if (error.response?.status === 403 && 
+                error.response?.data?.message === 'User is not active') {
+                toast.error('Account not active. Cannot update cart.')
+                return
+            }
             toast.error('Failed to update cart item')
         }
     }
@@ -99,7 +146,12 @@ export const CartProvider = ({ children }) => {
         try {
             await cartService.removeFromCart(productId)
             dispatch({ type: 'REMOVE_ITEM', payload: productId })
-        } catch {
+        } catch (error) {
+            if (error.response?.status === 403 && 
+                error.response?.data?.message === 'User is not active') {
+                toast.error('Account not active. Cannot remove items.')
+                return
+            }
             toast.error('Failed to remove item')
         }
     }
@@ -108,7 +160,12 @@ export const CartProvider = ({ children }) => {
         try {
             await cartService.clearCart()
             dispatch({ type: 'CLEAR_CART' })
-        } catch {
+        } catch (error) {
+            if (error.response?.status === 403 && 
+                error.response?.data?.message === 'User is not active') {
+                toast.error('Account not active. Cannot clear cart.')
+                return
+            }
             toast.error('Failed to clear cart')
         }
     }
