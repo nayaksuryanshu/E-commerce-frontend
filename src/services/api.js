@@ -3,7 +3,7 @@ import Cookies from 'js-cookie'
 import toast from 'react-hot-toast'
 
 // Updated to use environment variables properly
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://e-commerce-backend-production-5d11.up.railway.app'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://e-commerce-backend-production-5d11.up.railway.app'
 
 const api = axios.create({
   baseURL: API_BASE_URL,
