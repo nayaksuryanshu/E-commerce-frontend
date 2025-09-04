@@ -4,7 +4,7 @@ import {
   getFeaturedProducts, 
   getTrendingProducts, 
   getAllProducts 
-} from '../../utils/dummydata'
+} from '../../utils/dummyData'
 
 const ProductList = ({ filters }) => {
   const [products, setProducts] = useState([])
