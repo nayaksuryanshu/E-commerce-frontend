@@ -10,17 +10,15 @@ const CustomerDashboard = ({ activeTab }) => {
   const [orderFilter, setOrderFilter] = useState('all')
   const { isAuthenticated, user, isLoading: authLoading, error: authError } = useContext(AuthContext)
   
-  const { data: orders, isLoading, error } = useQuery(
-    ['customer-orders', orderFilter],
-    () => orderService.getOrders({ status: orderFilter === 'all' ? '' : orderFilter }),
-    { 
-      enabled: (activeTab === 'orders' || activeTab === 'overview') && isAuthenticated && !authLoading,
-      retry: 1,
-      onError: (error) => {
-        console.error('Error fetching orders:', error)
-      }
-    }
-  )
+const { data: orders, isLoading, error } = useQuery({
+  queryKey: ['customer-orders', orderFilter],
+  queryFn: () => orderService.getOrders({ status: orderFilter === 'all' ? '' : orderFilter }),
+  enabled: (activeTab === 'orders' || activeTab === 'overview') && isAuthenticated && !authLoading,
+  retry: 1,
+  onError: (error) => {
+    console.error('Error fetching orders:', error)
+  }
+})
 
   // Show loading while auth is being checked
   if (authLoading) {
